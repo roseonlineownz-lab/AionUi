@@ -8,11 +8,13 @@ import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
 import { useAllCronJobs } from '@renderer/pages/cron/useCronJobs';
-import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
+import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderBoardroomEntry } from './SiderNav';
 import SiderFooter from './SiderFooter';
 import CronJobSiderSection from './CronJobSiderSection';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
+import KanbanStatsWidget from '@renderer/components/kanban/KanbanStatsWidget';
+import KanbanWidgetErrorBoundary from '@renderer/components/kanban/KanbanWidgetErrorBoundary';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('@renderer/pages/conversation/GroupedHistory'));
 const SettingsSider = React.lazy(() => import('@renderer/pages/settings/components/SettingsSider'));
@@ -89,6 +91,19 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
     closePreview();
     setIsBatchMode(false);
     Promise.resolve(navigate('/scheduled')).catch((error) => {
+      console.error('Navigation failed:', error);
+    });
+    if (onSessionClick) {
+      onSessionClick();
+    }
+  };
+
+  const handleBoardroomClick = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
+    closePreview();
+    setIsBatchMode(false);
+    Promise.resolve(navigate('/boardroom')).catch((error) => {
       console.error('Navigation failed:', error);
     });
     if (onSessionClick) {
@@ -176,6 +191,14 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               onConversationSelect={handleConversationSelect}
               onSessionClick={onSessionClick}
             />
+            {/* Nova agent room - fixed above scroll */}
+            <SiderBoardroomEntry
+              isMobile={isMobile}
+              isActive={pathname === '/boardroom'}
+              collapsed={collapsed}
+              siderTooltipProps={siderTooltipProps}
+              onClick={handleBoardroomClick}
+            />
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <SiderScheduledEntry
               isMobile={isMobile}
@@ -200,6 +223,17 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                 siderTooltipProps={siderTooltipProps}
                 onSessionClick={onSessionClick}
               />
+              {/* Nova Kanban Stats Widget */}
+              {!collapsed && (
+                <div className="px-10px pt-8px pb-4px">
+                  <KanbanWidgetErrorBoundary>
+                    <KanbanStatsWidget
+                      apiUrl={import.meta.env?.VITE_KANBAN_API_URL || "http://127.0.0.1:9122/api/kanban"}
+                      pollIntervalMs={30000}
+                    />
+                  </KanbanWidgetErrorBoundary>
+                </div>
+              )}
               {/* Scheduled section */}
               {!collapsed && (
                 <CronJobSiderSection jobs={cronJobs} pathname={pathname} onNavigate={handleCronNavigate} />

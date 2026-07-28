@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 export type ServiceStatus = 'online' | 'offline' | 'degraded' | 'checking';
 
@@ -21,14 +21,15 @@ const POLL_INTERVAL = 30_000;
 const TIMEOUT_MS = 3_000;
 
 const SERVICES: Array<{ id: string; name: string; url: string }> = [
-  { id: 'hermes', name: 'Hermes', url: 'http://127.0.0.1:8642/health' },
-  { id: 'openclaw', name: 'OpenClaw', url: 'http://127.0.0.1:18791/health' },
+  { id: 'hermes', name: 'Hermes', url: 'http://127.0.0.1:8644/health' },
+  { id: 'openclaw', name: 'OpenClaw', url: 'http://127.0.0.1:18793/health' },
   { id: 'clawmem', name: 'ClawMem', url: 'http://127.0.0.1:7438/health' },
   { id: 'ollama', name: 'Ollama', url: 'http://127.0.0.1:11434/api/tags' },
   { id: 'litellm', name: 'LiteLLM', url: 'http://127.0.0.1:4000/health/readiness' },
-  { id: 'vibevoice', name: 'VibeVoice', url: 'http://127.0.0.1:8094/health' },
+  { id: 'voice', name: 'Voice', url: 'http://127.0.0.1:8098/health' },
   { id: 'n8n', name: 'n8n', url: 'http://127.0.0.1:5678/healthz' },
-  { id: 'space', name: 'Space', url: 'http://127.0.0.1:3003/health' },
+  { id: 'space', name: 'Space', url: 'http://127.0.0.1:3003/' },
+  { id: 'open-notebook', name: 'Open Notebook', url: 'http://127.0.0.1:5055/health' },
 ];
 
 interface ServiceHealthState {
@@ -83,9 +84,13 @@ export const ServiceHealthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const onlineCount = services.filter((s) => s.status === 'online').length;
+  const value = useMemo(
+    () => ({ services, onlineCount, totalCount: services.length }),
+    [onlineCount, services]
+  );
 
   return (
-    <ServiceHealthContext.Provider value={{ services, onlineCount, totalCount: services.length }}>
+    <ServiceHealthContext.Provider value={value}>
       {children}
     </ServiceHealthContext.Provider>
   );
